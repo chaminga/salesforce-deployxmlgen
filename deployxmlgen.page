@@ -1,0 +1,188 @@
+<apex:page controller="deployxmlgencon">
+<apex:includeScript value="{!URLFOR($Resource.jquerymin1111)}" />
+<!-- <apex:includeScript value="{!URLFOR($Resource.linedtextarea, 'jquery-linedtextarea.js')}" />
+ <apex:stylesheet value="{!URLFOR($Resource.linedtextarea, 'jquery-linedtextarea.css')}"/> -->
+<apex:includeScript value="{!URLFOR($Resource.highlighttextarea, 'jquery.highlighttextarea.min.js')}" />
+<apex:stylesheet value="{!URLFOR($Resource.highlighttextarea, 'jquery.highlighttextarea.min.css')}"/>
+
+<apex:pageMessages id="errormsg"></apex:pageMessages>
+<script type="text/javascript">
+    function select_all(el) {
+        if (typeof window.getSelection != "undefined" && typeof document.createRange != "undefined") {
+            var range = document.createRange();
+            range.selectNodeContents(el);
+            var sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        } else if (typeof document.selection != "undefined" && typeof document.body.createTextRange != "undefined") {
+            var textRange = document.body.createTextRange();
+            textRange.moveToElementText(el);
+            textRange.select();
+        }
+        
+        document.execCommand("copy");
+    }
+    
+    function formatInput() {
+
+        $(".inputText").each(function() {
+             this.value = this.value.replace(/;/g, "\n");
+             this.value = this.value.replace(/  /g, "\n");
+             this.value = this.value.replace(/,/g, "\n");
+             this.value = this.value.replace(/\"/g, "");
+             this.value = this.value.replace(/\'/g, "");
+             this.value = this.value.replace(/^\s*[\r\n]/gm, "");
+             this.value = this.value.replace(/\n$/, "");
+             this.value = this.value.replace(/\[.*?\]/g, '');
+             this.value = this.value.replace(/\(.*?\)/g, '');
+             this.value = this.value.replace(/\<.*?\>/g, '');
+          });
+  }
+</script>
+<apex:form >
+<apex:pageBlock title="ANT XML GENERATOR" mode="edit" >
+<apex:pageBlockButtons >
+<apex:commandButton style="font-weight: normal !important;" value="Format Input" onclick="formatInput(); return false;"/>
+<apex:commandButton value="Generate" action="{!GenerateXML}" style="width: 100px; border: solid 2px #32F35C; border-radius: 4px;"/>
+<!--<apex:commandButton value="Auto Generate (Modified)" action="/apex/deployxml?filter=modified" immediate="true"/>
+<apex:commandButton value="Auto Generate (Created)" action="/apex/deployxml?filter=created" immediate="true"/>-->
+</apex:pageBlockButtons>
+<apex:pageBlockSection title="Input" collapsible="false" columns="1" >
+<apex:outputPanel >
+    <ul>
+      <li>Use <a href="#" onclick="formatInput();" style="font-weight: bold">Format Input</a> to clean the input.</li>   
+      <li>Separate each file by a new line.</li>
+      <li>Errors will be <span style="background-color: yellow;">highlighted</span>.</li>
+    </ul>
+</apex:outputPanel>
+<apex:pageBlockSectionItem >
+<apex:inputTextarea title="Files List" label="Files List"  required="true" value="{!deployContent}" style="width: 100%; height: 300px;" styleClass="inputText"/>
+
+</apex:pageBlockSectionItem>
+
+<!-- <a href="#" onclick="formatInput();" style="font-weight: bold">[ Format Input ]</a> -->
+</apex:pageBlockSection>
+<apex:pageBlockSection title="Output (click to copy)" collapsible="false" columns="1">
+<apex:outputPanel rendered="{!deployItems == null || deployItems.size < 1}">
+No Items to Display
+</apex:outputPanel>
+<apex:outputPanel style="width: 100%; display: inline-block; overflow-y: scroll;" onclick="select_all(this)" rendered="{!deployItems != null && deployItems.size > 0}">
+<apex:outputPanel rendered="{!deployClasses != null && deployClasses.size>0}">
+    <pre style="font-size: 12px">
+        &lt;types&gt;
+            <apex:repeat value="{!deployClasses}" var="class">
+            &lt;members&gt;{!class}&lt;&#47;members&gt;
+            </apex:repeat>
+            &lt;name&gt;ApexClass&lt;&#47;name&gt;
+        &lt;&#47;types&gt;
+    </pre>
+</apex:outputPanel>
+<apex:outputPanel rendered="{!deployPages != null && deployPages.size>0}">
+    <pre style="font-size: 12px">
+        &lt;types&gt;
+            <apex:repeat value="{!deployPages}" var="page">
+            &lt;members&gt;{!page}&lt;&#47;members&gt;
+            </apex:repeat>
+            &lt;name&gt;ApexPage&lt;&#47;name&gt;
+        &lt;&#47;types&gt;
+    </pre>
+</apex:outputPanel>
+<apex:outputPanel rendered="{!deployTriggers != null && deployTriggers.size>0}">
+    <pre style="font-size: 12px">
+        &lt;types&gt;
+            <apex:repeat value="{!deployTriggers}" var="triger">
+            &lt;members&gt;{!triger}&lt;&#47;members&gt;
+            </apex:repeat>
+            &lt;name&gt;ApexTrigger&lt;&#47;name&gt;
+        &lt;&#47;types&gt;
+    </pre>
+</apex:outputPanel>
+<apex:outputPanel rendered="{!deployComponents !=null && deployComponents.size>0}">
+    <pre style="font-size: 12px">
+        &lt;types&gt;
+            <apex:repeat value="{!deployComponents}" var="component">
+            &lt;members&gt;{!component}&lt;&#47;members&gt;
+            </apex:repeat>
+            &lt;name&gt;ApexComponent&lt;&#47;name&gt;
+        &lt;&#47;types&gt;
+    </pre>
+</apex:outputPanel>
+<apex:outputPanel rendered="{!deployLayouts !=null && deployLayouts.size>0}">
+    <pre style="font-size: 12px">
+        &lt;types&gt;
+            <apex:repeat value="{!deployLayouts}" var="layout">
+            &lt;members&gt;{!layout}&lt;&#47;members&gt;
+            </apex:repeat>
+            &lt;name&gt;Layout&lt;&#47;name&gt;
+        &lt;&#47;types&gt;
+    </pre>
+</apex:outputPanel>
+<apex:outputPanel rendered="{!deployObjects !=null && deployObjects.size>0}">
+    <pre style="font-size: 12px">
+        &lt;types&gt;
+            <apex:repeat value="{!deployObjects}" var="object">
+            &lt;members&gt;{!object}&lt;&#47;members&gt;
+            </apex:repeat>
+            &lt;name&gt;CustomObject&lt;&#47;name&gt;
+        &lt;&#47;types&gt;
+    </pre>
+</apex:outputPanel>
+<apex:outputPanel rendered="{!deployResources !=null && deployResources.size>0}">
+    <pre style="font-size: 12px">
+        &lt;types&gt;
+            <apex:repeat value="{!deployResources}" var="resource">
+            &lt;members&gt;{!resource}&lt;&#47;members&gt;
+            </apex:repeat>
+            &lt;name&gt;StaticResource&lt;&#47;name&gt;
+        &lt;&#47;types&gt;
+    </pre>
+</apex:outputPanel>
+<apex:outputPanel rendered="{!deployWorkflows !=null && deployWorkflows.size>0}">
+    <pre style="font-size: 12px">
+        &lt;types&gt;
+            <apex:repeat value="{!deployWorkflows}" var="workflow">
+            &lt;members&gt;{!workflow}&lt;&#47;members&gt;
+            </apex:repeat>
+            &lt;name&gt;Workflow&lt;&#47;name&gt;
+        &lt;&#47;types&gt;
+    </pre>
+</apex:outputPanel>
+<apex:outputPanel rendered="{!deployApprovalProcess !=null && deployApprovalProcess.size>0}">
+    <pre style="font-size: 12px">
+        &lt;types&gt;
+            <apex:repeat value="{!deployApprovalProcess}" var="approvalProcess">
+            &lt;members&gt;{!approvalProcess}&lt;&#47;members&gt;
+            </apex:repeat>
+            &lt;name&gt;ApprovalProcess&lt;&#47;name&gt;
+        &lt;&#47;types&gt;
+    </pre>
+</apex:outputPanel>
+<apex:outputPanel rendered="{!deployEmailTemplates !=null && deployEmailTemplates.size>0}">
+    <pre style="font-size: 12px">
+        &lt;types&gt;
+            <apex:repeat value="{!deployEmailTemplates}" var="emailTemplate">
+            &lt;members&gt;{!emailTemplate}&lt;&#47;members&gt;
+            </apex:repeat>
+            &lt;name&gt;EmailTemplate&lt;&#47;name&gt;
+        &lt;&#47;types&gt;
+    </pre>
+</apex:outputPanel>
+</apex:outputPanel>
+</apex:pageBlockSection>
+<apex:pageBlockSection columns="1" rendered="{!deployItems != null && deployItems.size > 0}">
+<code>
+Debug:
+{!deployItems}
+</code>
+</apex:pageBlockSection>
+</apex:pageBlock>
+</apex:form>
+<script type="text/javascript" language="Javascript">
+    $('.inputText').highlightTextarea({
+      words: [{!errorHighlights}],
+      caseSensitive: false
+    });
+    //$(".inputText").linedtextarea();
+</script>
+
+</apex:page>
